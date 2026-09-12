@@ -2,7 +2,7 @@
 
 COMPILER_OPTS := -Wall -Wpedantic
 
-TARGET := cserve
+TARGET := cerve
 
 SRC_DIR := src/
 INC_DIR := inc/

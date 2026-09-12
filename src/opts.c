@@ -10,20 +10,20 @@
 #include <fcntl.h>
 #include <getopt.h>
 
-const char* usagemsg = "Usage: cserve [-h] [-p <port number>] <root directory>";
-struct cserveconf config = {.help = false, .portn = 80, .srvdirpath = NULL};
-const struct cserveconf* options = &config;
+const char* usagemsg = "Usage: cerve [-h] [-p <port number>] <root directory>";
+struct cerveconf config = {.help = false, .portn = 80, .srvdirpath = NULL};
+const struct cerveconf* options = &config;
 
-// list of all options recognised by cserve
+// list of all options recognised by cerve
 // verbose, version, quiet, max connections, etc.
-const struct cserveopt optlist[] = {
+const struct cerveopt optlist[] = {
     {'h', "Display this help message and exit", NULL, false},
     {'p', "Specify the port to serve on", "80", true},
     // {'d', "Specify directory to serve", NULL},
 };
 const size_t optc = size(optlist);
 
-int parseopts(struct cserveconf* opts, int argc, char* argv[])
+int parseopts(struct cerveconf* opts, int argc, char* argv[])
 {
     size_t optstrsz = 0;
     for (size_t i = 0; i < optc; i++)
