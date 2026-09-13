@@ -18,7 +18,7 @@ struct cerveconf
 struct cerveopt
 {
     char symb;
-    const char* help, *deflt;
+    const char *help, *deflt;
     bool takesarg;
 };
 
@@ -27,9 +27,12 @@ extern const char* usagemsg;
 extern const struct cerveconf* options;
 
 // parse the input arguments and configure the struct as accordingly
-int parseopts(struct cerveconf* opts, int argc, char* argv[]);
+int
+parseopts(struct cerveconf* opts, int argc, char* argv[]);
 // print all registered options in a block to file (mostly for -h)
-void printopts(FILE* file);
+void
+printopts(FILE* file);
 // parse the program's arguments and configure the global options object
-void configure(int argc, char* argv[]);
+void
+configure(int argc, char* argv[]);
 #endif

@@ -1,4 +1,4 @@
-.PHONY: debug
+.PHONY: debug format
 
 COMPILER_OPTS := -Wall -Wpedantic
 
@@ -20,6 +20,10 @@ test: build
 
 debug: COMPILER_OPTS += -g
 debug: clean build
+
+
+format:
+	find "$(SRC_DIR)" "$(INC_DIR)" -type f \( -name '*.c' -o -name '*.h' \) -exec clang-format -i -style=file '{}' '+'
 
 clean:
 	rm "$(OUT_DIR)$(TARGET)" || true

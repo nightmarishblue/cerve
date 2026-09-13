@@ -1,9 +1,9 @@
 #include "sock.h"
 #include "main.h"
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include <unistd.h>
 
@@ -11,7 +11,8 @@
 
 #include <sys/sendfile.h>
 
-SBUFF mksbuff(fd desc)
+SBUFF
+mksbuff(fd desc)
 {
     SBUFF out;
     out.desc = desc;
@@ -21,16 +22,17 @@ SBUFF mksbuff(fd desc)
 }
 
 // get this's head (the next byte of data in its buffer)
-char* sockhead(SBUFF* this)
+char*
+sockhead(SBUFF* this)
 {
     return &this->buff[this->used];
 }
 
-ssize_t sbuffrecv(SBUFF* this, int flags)
+ssize_t
+sbuffrecv(SBUFF* this, int flags)
 {
     ssize_t received = recv(this->desc, this->buff, SBUFF_SIZE, flags);
-    if (received != -1)
-    {
+    if (received != -1) {
         this->used = 0;
         this->len = received;
     }
@@ -39,41 +41,50 @@ ssize_t sbuffrecv(SBUFF* this, int flags)
 
 // refill this SOCK if needed
 // return false if the refill failed and this SOCK is empty
-bool sockrefill(SBUFF* this)
+bool
+sockrefill(SBUFF* this)
 {
-    if (this->used < this->len) return true;
-    return sbuffrecv(this, 0) > 0; // FIXME maybe treating "no data" and "error occurred" the same is suboptimal...
+    if (this->used < this->len)
+        return true;
+    return sbuffrecv(this, 0) > 0; // FIXME maybe treating "no data" and "error
+                                   // occurred" the same is suboptimal...
 }
 
-int sbuffgetc(SBUFF* this)
+int
+sbuffgetc(SBUFF* this)
 {
-    if (!sockrefill(this)) return -1;
+    if (!sockrefill(this))
+        return -1;
     return this->buff[this->used++];
 }
 
-int sbuffpeek(SBUFF* this)
+int
+sbuffpeek(SBUFF* this)
 {
-    if (!sockrefill(this)) return -1;
+    if (!sockrefill(this))
+        return -1;
     return this->buff[this->used];
 }
 
-int sgetc(fd sock, int flags)
+int
+sgetc(fd sock, int flags)
 {
     unsigned char c[1];
     int i = recv(sock, c, 1, flags);
-    if (i != 1) return i;
+    if (i != 1)
+        return i;
     return *c;
 }
 
-size_t readuntilchar(SBUFF* sock, const size_t len, char buf[len], char illegal)
+size_t
+readuntilchar(SBUFF* sock, const size_t len, char buf[len], char illegal)
 {
-    if (len == 0) return 0; // safer to simply exit if len is 0
+    if (len == 0)
+        return 0; // safer to simply exit if len is 0
     // consume len - 1 chars
-    for (size_t i = 0; i < len - 1; i++)
-    {
+    for (size_t i = 0; i < len - 1; i++) {
         int c = sbuffgetc(sock);
-        if (c == illegal)
-        {
+        if (c == illegal) {
             buf[i] = '\0';
             return i;
         }
@@ -86,15 +97,15 @@ size_t readuntilchar(SBUFF* sock, const size_t len, char buf[len], char illegal)
     }
     buf[len - 1] = '\0'; // terminate the string
     // peek at the next char and consume it if it's the breakchar
-    if (sbuffpeek(sock) == illegal)
-    {
+    if (sbuffpeek(sock) == illegal) {
         sock->used++;
         return len - 1; // also return the number of bytes consumed
     }
     return len; // return len on bad
 }
 
-int sockprintf(fd sock, const char* fmt, ...)
+int
+sockprintf(fd sock, const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
@@ -103,7 +114,8 @@ int sockprintf(fd sock, const char* fmt, ...)
     return i;
 }
 
-ssize_t transmitfile(fd sock, fd file, size_t n)
+ssize_t
+transmitfile(fd sock, fd file, size_t n)
 {
     // TODO ensure this compiles on systems without sendfile
     ssize_t ret = sendfile(sock, file, NULL, n); // BUG this does not retry
