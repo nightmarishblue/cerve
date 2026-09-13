@@ -22,7 +22,8 @@ struct cerveopt
     bool takesarg;
 };
 
-extern const char* usagemsg; // FIXME antipattern
+// FIXME global state is gay
+extern const char* usagemsg;
 extern const struct cerveconf* options;
 
 // parse the input arguments and configure the struct as accordingly

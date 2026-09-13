@@ -48,6 +48,7 @@ enum code
 };
 
 // struct representing the response type, like 200 OK
+// FIXME not sure why this is a separate type from response
 struct status
 {
     const char* desc;
@@ -68,6 +69,7 @@ struct request
 struct response
 {
     enum code code;
+    // FIXME not all responses have a file
     fd file; // handle of the file to serve
 };
 

@@ -1,4 +1,5 @@
 #!/bin/sh
+# BUG these tests don't remotely fucking work lol
 trap "trap - SIGTERM && kill -- -$$ &> /dev/null" SIGINT SIGTERM EXIT # ensure no orphans
 set +e
 PORT=6969

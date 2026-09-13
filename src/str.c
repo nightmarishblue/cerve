@@ -8,6 +8,7 @@ char* msprintf(const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
+    // BUG this isn't being set in our makefile
     #ifdef _GNU_SOURCE
         char* str;
         int len = vasprintf(&str, fmt, args);

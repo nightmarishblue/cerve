@@ -165,6 +165,7 @@ enum code parsereq(SBUFF* sock, struct request* request)
     return OK;
 }
 
+// TODO rename
 enum code errorcode(int errorno) {
     switch (errno)
     {
@@ -209,7 +210,6 @@ bool serve(SBUFF* sock)
     struct response res;
     res.code = parsereq(sock, &req);
 
-    // TODO parse headers somewhere about here
     printf("%s %s HTTP/%s\n", strfrommethod(req.method), req.identifier, strfromversion(req.version));
     if (res.code != OK)
     {
