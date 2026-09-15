@@ -1,6 +1,6 @@
 .PHONY: debug format
 
-COMPILER_OPTS := -Wall -Wpedantic
+COMPILER_OPTS := -Wall -Wpedantic -std=gnu23
 
 TARGET := cerve
 
