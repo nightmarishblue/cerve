@@ -2,6 +2,7 @@
 #define _MAIN_H
 
 #define size(arr) (sizeof(arr) / sizeof(arr[0]))
+#define len(str) (sizeof(str) - 1)
 
 // print a formatted string to stderr, along with the current ERRNO message
 void

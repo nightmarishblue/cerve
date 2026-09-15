@@ -15,6 +15,9 @@
 #include <sys/socket.h> // for a send or 2
 #include <unistd.h>
 
+
+#define CRLF "\r\n"
+
 const char* mthdstrs[] = { "GET",     "HEAD",    "POST",  "PUT",  "DELETE",
                            "CONNECT", "OPTIONS", "TRACE", "PATCH" };
 const size_t mthdc = size(mthdstrs);
@@ -227,23 +230,25 @@ getfile(struct request* req, struct response* res)
 bool
 serve(SBUFF* sock)
 {
-    struct request req = { .method = GET,
-                           .version = DEFAULT_HTTP_VERSION,
-                           .identifier = "" };
+    // BUG potentially uninitialised - refactor to separate these code paths
+    struct request req;
     struct response res;
     res.code = parsereq(sock, &req);
 
-    printf("%s %s HTTP/%s\n",
-           strfrommethod(req.method),
-           req.identifier,
-           strfromversion(req.version));
     if (res.code != OK) {
         const struct status* stat = statusfromcode(res.code);
         if (stat)
             fprintf(stderr, "erroneous request: %s\n", stat->desc);
         sendstatus(sock->desc, req.version, res.code);
+        write(sock->desc, CRLF, len(CRLF));
         return false; // do we really need to break the connection here?
     }
+
+    printf("%s %s HTTP/%s\n",
+           strfrommethod(req.method),
+           req.identifier,
+           strfromversion(req.version));
+
 
     // TODO probably throw errors if the file isn't "regular"
     switch (req.method) {
