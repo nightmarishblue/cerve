@@ -4,6 +4,7 @@
 #include "sock.h"
 #include "str.h"
 
+#include <asm-generic/errno-base.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,7 +15,6 @@
 #include <fcntl.h>
 #include <sys/socket.h> // for a send or 2
 #include <unistd.h>
-
 
 #define CRLF "\r\n"
 
@@ -108,12 +108,16 @@ sendstatus(fd sock, enum version version, enum code code)
     return success; // this is a lot of error checking I know
 }
 
-#define MAX_REQUEST_LEN 4096 // TODO
+#define MAX_REQUEST_LEN 4096 // TODO tune this once header parsing is done
 
 // read the first line out of a socket and figure out if it's a valid request
 // populate the request object with its version and file identifier
 // return the code to respond with (will be 4xx if bad)
-// FIXME out parameters bad
+// TODO document the pointer invariants
+// FIXME there are actually 3 possible outcomes - successful, error and
+// interrupted
+// BUG requests with \n instead of \r\n hang indefinitely - they
+// should either just work or return 400
 enum code
 parsereq(SBUFF* sock, struct request* request)
 {
@@ -169,6 +173,7 @@ parsereq(SBUFF* sock, struct request* request)
     size_t j = 0;
     for (int i = 0; i < MAX_REQUEST_LEN; i++) {
         int c = sbuffgetc(sock);
+        // BUG doesn't take EINTR into account
         if (c == -1) {
             eprintf("Error reading from socket");
             return INTERNAL_SERVER_ERROR;
@@ -230,12 +235,21 @@ getfile(struct request* req, struct response* res)
 bool
 serve(SBUFF* sock)
 {
+    // TODO clean up into
+    // 1. parse request
+    // 2. break if bad
+    // 3. construct response
+    // 4. send it
+
     // BUG potentially uninitialised - refactor to separate these code paths
     struct request req;
     struct response res;
     res.code = parsereq(sock, &req);
 
     if (res.code != OK) {
+        if (errno == EINTR)
+            return false;
+
         const struct status* stat = statusfromcode(res.code);
         if (stat)
             fprintf(stderr, "erroneous request: %s\n", stat->desc);
@@ -248,7 +262,6 @@ serve(SBUFF* sock)
            strfrommethod(req.method),
            req.identifier,
            strfromversion(req.version));
-
 
     // TODO probably throw errors if the file isn't "regular"
     switch (req.method) {

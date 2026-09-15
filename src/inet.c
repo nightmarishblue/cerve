@@ -1,6 +1,7 @@
 #include "inet.h"
 #include "main.h"
 
+#include <asm-generic/errno-base.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -59,27 +60,19 @@ closesock(fd sock)
 bool
 closepeer(fd sock)
 {
-    if (shutdown(sock, SHUT_WR) == -1) {
+    // TODO swallowing this error is bad, even if we can't act much on it
+    if (shutdown(sock, SHUT_RDWR) == -1) {
         eprintf("could not shutdown socket");
     }
     return closesock(sock);
 }
 
-const struct timeval timeout = { 5, 0 }; // 5s timeout
 fd
 acceptconn(fd sock, struct sockaddr* clientaddr, socklen_t* addrlen)
 {
     fd conn = accept(sock, clientaddr, addrlen);
-    if (conn == -1)
+    if (conn == -1 && errno != EINTR) // an interruption may be expected
         eprintf("could not create socket for client");
-    // TODO mess about with timeouts
-    // if (setsockopt(conn, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout))
-    // != 0)
-    // {
-    //     eprintf("could not set timeout on client socket: ");
-    //     closesock(conn);
-    //     return -1;
-    // }
     return conn;
 }
 

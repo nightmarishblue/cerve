@@ -3,12 +3,22 @@
 #include "opts.h"
 #include "sock.h"
 
+#include <bits/types/siginfo_t.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <errno.h>
+
+volatile sig_atomic_t loop = true;
+
+void
+cleanup(int _signal)
+{
+    puts("Terminating loop...");
+    loop = false;
+}
 
 int
 main(int argc, char* argv[])
@@ -25,7 +35,10 @@ main(int argc, char* argv[])
         return 1;
     }
 
-    while (true) {
+    struct sigaction a = { .sa_handler = &cleanup, .sa_flags = SA_RESETHAND };
+    sigaction(SIGINT, &a, NULL);
+
+    while (loop) {
         printf("Waiting for connection...\n");
         struct sockaddr_in clientaddr;
         socklen_t addrsz = sizeof(clientaddr);
@@ -45,6 +58,7 @@ main(int argc, char* argv[])
         closepeer(clisock);
     }
 
+    puts("Closing socket...");
     closesock(sockid);
     return 0;
 }
