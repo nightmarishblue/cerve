@@ -236,24 +236,21 @@ bool
 serve(SBUFF* sock)
 {
     // TODO clean up into
-    // 1. parse request
-    // 2. break if bad
-    // 3. construct response
-    // 4. send it
+    // [x] 1. parse request
+    // [ ] 2. break if bad
+    // [ ] 3. construct response
+    // [ ] 4. send it
 
-    // BUG potentially uninitialised - refactor to separate these code paths
     struct request req;
-    struct response res;
-    res.code = parsereq(sock, &req);
-
-    if (res.code != OK) {
+    auto code = parsereq(sock, &req);
+    if (code != OK) {
         if (errno == EINTR)
             return false;
 
-        const struct status* stat = statusfromcode(res.code);
+        const struct status* stat = statusfromcode(code);
         if (stat)
             fprintf(stderr, "erroneous request: %s\n", stat->desc);
-        sendstatus(sock->desc, req.version, res.code);
+        sendstatus(sock->desc, req.version, code);
         write(sock->desc, CRLF, len(CRLF));
         return false; // do we really need to break the connection here?
     }
@@ -263,6 +260,7 @@ serve(SBUFF* sock)
            req.identifier,
            strfromversion(req.version));
 
+    struct response res = { .code = code };
     // TODO probably throw errors if the file isn't "regular"
     switch (req.method) {
         case GET: {
