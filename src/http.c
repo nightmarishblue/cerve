@@ -1,4 +1,5 @@
 #include "http.h"
+#include "file.h"
 #include "main.h"
 #include "opts.h"
 #include "sock.h"
@@ -14,6 +15,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/socket.h> // for a send or 2
+#include <sys/stat.h>
 #include <unistd.h>
 
 #define CRLF "\r\n"
@@ -210,7 +212,7 @@ errorcode(int errorno)
 // response code in res return the size of the file in bytes, or -1 if an error
 // occurred
 off_t
-getfile(struct request* req, struct response* res)
+getfile(const struct request* req, struct response* res)
 {
     const char* filepath = req->identifier;
     res->file = openunder(options->srvdir, filepath, O_RDONLY);
@@ -263,52 +265,24 @@ serve(SBUFF* sock)
     struct response res = { .code = code };
     // TODO probably throw errors if the file isn't "regular"
     switch (req.method) {
-        case GET: {
+        case GET:
+        case HEAD: {
             // open the file and send it
             off_t fsize = getfile(&req, &res);
             sendstatus(sock->desc, req.version, res.code);
 
-            if (fsize != -1) // no need to check file, fsize tells us if
-                             // it's open
-            {
-                sockprintf(sock->desc, "Content-Length: %ld\r\n\r\n", fsize);
+            if (fsize == -1) {
+                sockprintf(sock->desc, CRLF);
+                break;
+            }
+
+            sockprintf(sock->desc, "Content-Length: %ld\r\n\r\n", fsize);
+            if (req.method == GET)
                 transmitfile(sock->desc,
                              res.file,
                              fsize); // TODO check return value and
                                      // break connection if bad
-            } else {
-                send(sock->desc, EMPTY, sizeof(EMPTY) - 1, 0);
-            }
-
-            if (res.file != -1)
-                close(res.file);
-
-            break;
-        };
-        case HEAD: {
-            // stat the file - don't open it
-            // check if we can access the file
-            if (!canread(options->srvdir, req.identifier + 1)) {
-                eprintf("cannot access file at relative path %s",
-                        req.identifier + 1);
-                sendstatus(sock->desc, req.version, errorcode(errno));
-                send(sock->desc, EMPTY, sizeof(EMPTY) - 1, 0);
-                break;
-            }
-
-            struct stat stats;
-            if (!statfile(options->srvdir, req.identifier + 1, &stats)) {
-                eprintf("could not stat relative path %s", req.identifier + 1);
-                sendstatus(sock->desc,
-                           req.version,
-                           errorcode(errno)); // figure out why
-                send(sock->desc, EMPTY, sizeof(EMPTY) - 1, 0);
-                break; // not a fatal error
-            }
-
-            sendstatus(sock->desc, req.version, OK);
-            sockprintf(
-              sock->desc, "Content-Length: %ld\r\n\r\n", stats.st_size);
+            close(res.file);
 
             break;
         };
