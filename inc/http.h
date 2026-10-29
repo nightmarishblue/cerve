@@ -1,28 +1,12 @@
-// http protocol parsing and stuff
 #ifndef _HTTP_H
 #define _HTTP_H
 
-#include "file.h"
 #include "sock.h"
 
 #include <stdbool.h>
 #include <sys/types.h>
 
-#define MAX_METHOD_LEN                                                         \
-    8 // array size needed to represent the name of all methods
-// request methods
-enum method
-{
-    GET,
-    HEAD,
-    POST,
-    PUT,
-    DELETE,
-    CONNECT,
-    OPTIONS,
-    TRACE,
-    PATCH,
-};
+#define CRLF "\r\n"
 
 #define MAX_VERSION_LEN 9 // array size needed for "HTTP/X.X"
 enum version
@@ -35,68 +19,13 @@ enum version
 #define DEFAULT_HTTP_VERSION                                                   \
     V1_1 // the default version to assume when we can't determine the client's
 
-// codes for the statuses, by name
-enum code
-{
-    OK = 200,
-    BAD_REQUEST = 400,
-    FORBIDDEN = 403,
-    NOT_FOUND = 404,
-    LENGTH_REQUIRED = 411, // the client didn't supply Content-Length
-    PAYLOAD_TOO_LARGE = 413,
-    URI_TOO_LONG = 414,
-    IM_A_TEAPOT = 418,           // things we should comply with but don't
-    INTERNAL_SERVER_ERROR = 500, // ¯\_(ツ)_/¯
-    NOT_IMPLEMENTED = 501, // things we don't have to comply with (and don't)
-};
-
-// struct representing the response type, like 200 OK
-// FIXME not sure why this is a separate type from response
-struct status
-{
-    const char* desc;
-    enum code code;
-};
-
-#define INDEX "index.html"
-
-#define MAX_REQ_PATH_LEN 256
-struct request
-{
-    enum method method;   // what method this request is
-    enum version version; // the request's version
-    char identifier[MAX_REQ_PATH_LEN + 1 + sizeof(INDEX) -
-                    1]; // the path to the file - extra storage for indexes
-    // can we get away with not null-terminating?
-};
-
-enum bodytype
-{
-    EMPTY,
-    FILE_ // fuck c
-};
-
-struct response
-{
-    enum code code;
-    enum version version;
-
-    // headers???
-    ssize_t contentlen;
-
-    enum bodytype type;
-
-    fd file; // handle of the file to serve if type == FILE
-};
-
-// destroy the response and free any resources
-void
-freeresponse(struct response* res);
-
 // with a string of the form "HTTP/x.x" (9 chars), return its version
 // or -1 on invalid
 enum version
 versionfromstr(const char verstr[MAX_VERSION_LEN]);
+
+const char*
+strfromversion(enum version ver);
 
 // read from a given socket and answer 1 HTTP request
 // return false if a HTTP error was encountered
