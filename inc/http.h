@@ -6,6 +6,7 @@
 #include "sock.h"
 
 #include <stdbool.h>
+#include <sys/types.h>
 
 #define MAX_METHOD_LEN                                                         \
     8 // array size needed to represent the name of all methods
@@ -69,12 +70,28 @@ struct request
     // can we get away with not null-terminating?
 };
 
+enum bodytype
+{
+    EMPTY,
+    FILE_ // fuck c
+};
+
 struct response
 {
     enum code code;
-    // FIXME not all responses have a file
-    fd file; // handle of the file to serve
+    enum version version;
+
+    // headers???
+    ssize_t contentlen;
+
+    enum bodytype type;
+
+    fd file; // handle of the file to serve if type == FILE
 };
+
+// destroy the response and free any resources
+void
+freeresponse(struct response* res);
 
 // with a string of the form "HTTP/x.x" (9 chars), return its version
 // or -1 on invalid

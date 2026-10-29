@@ -230,31 +230,103 @@ getfile(const struct request* req, struct response* res)
                  // response struct :/
 }
 
-#define EMPTY                                                                  \
-    "Content-Length: 0\r\n\r\n" // GET responses are assumed to have a body by
-                                // default
+bool
+respond(const struct request* request, struct response* response)
+{
+    switch (request->method) {
+        case GET:
+        case HEAD: {
+            /*
+                open the file
+                check if that workeded:
+                - return a 400/500
+                - return that file
+            */
+            const char* filepath = request->identifier;
+            // TODO probably throw errors if the file isn't "regular"
+            fd file = openunder(options->srvdir, filepath, O_RDONLY);
+            if (file == -1)
+                return false;
+
+            struct stat finfo;
+            if (fstat(file, &finfo) == -1) {
+                close(file);
+                return false;
+            }
+
+            response->code = OK; // what if this fails later?
+            response->version = request->version;
+            response->contentlen = finfo.st_size;
+
+            if (request->method == GET) {
+                response->type = FILE_;
+                response->file = file;
+            } else {
+                response->type = EMPTY;
+                close(file);
+            }
+
+            return true;
+        };
+        default: {
+            fprintf(stderr,
+                    "Illegal state: unsupported method '%s'\n",
+                    strfrommethod(request->method));
+            return false;
+        }
+    }
+}
+
+void
+sendres(const struct response* response, fd sock)
+{
+    // 1. status
+    sendstatus(sock, response->version, response->code);
+    // 2. headers
+    if (response->contentlen != -1)
+        sockprintf(sock, "Content-Length: %ld" CRLF, response->contentlen);
+    // 3. blank line
+    write(sock, CRLF, len(CRLF));
+    // 4. body (if there)
+    switch (response->type) {
+        case EMPTY:
+            break;
+        case FILE_: {
+            transmitfile(sock, response->file, response->contentlen);
+            break;
+        }
+        default: {
+            eprintf("illegal state - unknown response body type");
+            break;
+        }
+    }
+}
+
+void
+freeresponse(struct response* res)
+{
+    // free the response/close its file
+    if (res->type == FILE_)
+        close(res->file);
+}
 
 bool
 serve(SBUFF* sock)
 {
-    // TODO clean up into
-    // [x] 1. parse request
-    // [ ] 2. break if bad
-    // [ ] 3. construct response
-    // [ ] 4. send it
-
     struct request req;
     auto code = parsereq(sock, &req);
     if (code != OK) {
         if (errno == EINTR)
             return false;
 
-        const struct status* stat = statusfromcode(code);
-        if (stat)
-            fprintf(stderr, "erroneous request: %s\n", stat->desc);
-        sendstatus(sock->desc, req.version, code);
-        write(sock->desc, CRLF, len(CRLF));
-        return false; // do we really need to break the connection here?
+        struct response res = { .version = DEFAULT_HTTP_VERSION,
+                                .code = code,
+                                .contentlen = -1,
+                                .type = EMPTY };
+
+        sendres(&res, sock->desc);
+        return false; // do we really need to break
+                      // the connection here?
     }
 
     printf("%s %s HTTP/%s\n",
@@ -262,37 +334,14 @@ serve(SBUFF* sock)
            req.identifier,
            strfromversion(req.version));
 
-    struct response res = { .code = code };
-    // TODO probably throw errors if the file isn't "regular"
-    switch (req.method) {
-        case GET:
-        case HEAD: {
-            // open the file and send it
-            off_t fsize = getfile(&req, &res);
-            sendstatus(sock->desc, req.version, res.code);
-
-            if (fsize == -1) {
-                sockprintf(sock->desc, CRLF);
-                break;
-            }
-
-            sockprintf(sock->desc, "Content-Length: %ld\r\n\r\n", fsize);
-            if (req.method == GET)
-                transmitfile(sock->desc,
-                             res.file,
-                             fsize); // TODO check return value and
-                                     // break connection if bad
-            close(res.file);
-
-            break;
-        };
-        default: {
-            fprintf(stderr,
-                    "Illegal state: unsupported method '%s'\n",
-                    strfrommethod(req.method));
-            return false;
-        };
+    struct response res;
+    if (!respond(&req, &res)) {
+        res.code = errorcode(errno);
+        res.type = EMPTY;
+        res.contentlen = -1;
+        res.version = req.version;
     }
+    sendres(&res, sock->desc);
 
     return true;
 }
