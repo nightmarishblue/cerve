@@ -1,32 +1,59 @@
-.PHONY: debug format
-
-COMPILER_OPTS := -Wall -Wpedantic -std=gnu23
-
+# project structure
 TARGET := cerve
 
-SRC_DIR := src/
-INC_DIR := inc/
-OUT_DIR := bin/
-TST_DIR := tests/
+# inputs
+SRC_DIR := src
+SRCS := $(shell find $(SRC_DIR) -type f -name '*.c')
 
-# build the program
-build: $(OUT_DIR)$(TARGET)
+INC_DIR := inc
+INCS := $(shell find $(INC_DIR) -type f -name '*.h')
 
-# make the out dir
-make_out: $(OUT_DIR)
+# outputs
+BUILD_DIR := build
 
-debug: COMPILER_OPTS += -g
+OBJ_DIR := $(BUILD_DIR)/obj
+OBJS := $(patsubst $(SRC_DIR)%.c,$(OBJ_DIR)%.o,$(SRCS))
+
+DEPS := $(OBJS:.o=.d)
+
+OUT_DIR := bin
+
+
+# toolchain
+CFLAGS ?= -Wall -Wpedantic -std=gnu23 -MMD -MP
+CPPFLAGS += -I $(INC_DIR)
+
+
+# rules
+.PHONY: build debug format clean help
+## build the main binary
+build: $(OUT_DIR)/$(TARGET)
+
+## build the binary with debug symbols attached
+debug: CFLAGS += -g
 debug: clean build
 
-
+## apply formatting to sources and headers
 format:
-	find "$(SRC_DIR)" "$(INC_DIR)" -type f \( -name '*.c' -o -name '*.h' \) -exec clang-format -i -style=file '{}' '+'
+	clang-format -i -style=file $(SRCS) $(INCS)
 
+## remove all build output
 clean:
-	rm "$(OUT_DIR)$(TARGET)" || true
+	$(RM) "$(OUT_DIR)/$(TARGET)" $(OBJS)
 
-$(OUT_DIR)$(TARGET): $(SRC_DIR)* | make_out
-	gcc "$(SRC_DIR)"* -I "$(INC_DIR)" -o "$(OUT_DIR)$(TARGET)" $(COMPILER_OPTS)
+## show help for targets
+help:
+	@grep -A1 '^##' $(MAKEFILE_LIST) | sed 's/:.*//'
 
-$(OUT_DIR):
-	mkdir -p $(OUT_DIR)
+$(OUT_DIR)/$(TARGET): $(OBJS)
+	@mkdir -p $(dir $@)
+	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+
+# misc
+# recompile sources if their headers change
+-include $(DEPS)

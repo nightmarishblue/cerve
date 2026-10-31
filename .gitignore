@@ -2,4 +2,6 @@
 !.gitignore
 
 bin/
+build/
+
 compile_commands.json
