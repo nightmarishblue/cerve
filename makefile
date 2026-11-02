@@ -39,7 +39,8 @@ format:
 
 ## remove all build output
 clean:
-	$(RM) "$(OUT_DIR)/$(TARGET)" $(OBJS)
+	$(RM) "$(OUT_DIR)/$(TARGET)" $(OBJS) $(DEPS)
+	rmdir $(OUT_DIR) $(OBJ_DIR) $(BUILD_DIR)
 
 ## show help for targets
 help:
