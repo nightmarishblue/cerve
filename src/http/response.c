@@ -104,6 +104,7 @@ sendres(const struct response* response, fd sock)
     // 2. headers
     if (response->contentlen != -1)
         sockprintf(sock, "Content-Length: %ld" CRLF, response->contentlen);
+    sockprintf(sock, "Connection: close" CRLF);
     // 3. blank line
     write(sock, CRLF, len(CRLF));
     // 4. body (if there)

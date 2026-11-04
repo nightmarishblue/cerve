@@ -3,13 +3,17 @@
 #include "opts.h"
 #include "sock.h"
 
+#include <asm-generic/socket.h>
 #include <bits/types/siginfo_t.h>
+#include <fcntl.h>
+#include <netinet/in.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <errno.h>
+#include <sys/socket.h>
 
 volatile sig_atomic_t loop = true;
 
@@ -20,6 +24,18 @@ cleanup(int _signal)
     loop = false;
 }
 
+void
+eprintf(const char* format, ...)
+{
+    // maybe quit if silent
+    va_list args;
+    va_start(args, format);
+    fputs("Error: ", stderr); // would end up writing this 10 times otherwise
+    vfprintf(stderr, format, args);
+    va_end(args);
+    fprintf(stderr, ": %s\n", strerror(errno));
+}
+
 int
 main(int argc, char* argv[])
 {
@@ -28,6 +44,11 @@ main(int argc, char* argv[])
 
     struct sockaddr_in myaddr;
     fd sockid = crtsock();
+    if (setsockopt(
+          sockid, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) == -1) {
+        eprintf("could not set socket options");
+    };
+
     if (sockid == -1)
         return 1;
     if (!(bindport(sockid, &myaddr, options->portn) && socklisten(sockid))) {
@@ -51,9 +72,8 @@ main(int argc, char* argv[])
             printf("Received connection from %s\n", name);
 
         SBUFF socket = mksbuff(clisock);
-        do
-            puts("Serving request...\n");
-        while (serve(&socket) && sbuffpeek(&socket) != -1);
+        puts("Serving request...\n");
+        serve(&socket);
         puts("Closing connection...");
         closepeer(clisock);
     }
@@ -61,16 +81,4 @@ main(int argc, char* argv[])
     puts("Closing socket...");
     closesock(sockid);
     return 0;
-}
-
-void
-eprintf(const char* format, ...)
-{
-    // maybe quit if silent
-    va_list args;
-    va_start(args, format);
-    fputs("Error: ", stderr); // would end up writing this 10 times otherwise
-    vfprintf(stderr, format, args);
-    va_end(args);
-    fprintf(stderr, ": %s\n", strerror(errno));
 }
