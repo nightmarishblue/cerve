@@ -74,8 +74,7 @@ serve(SBUFF* sock)
                                 .type = EMPTY };
 
         sendres(&res, sock->desc);
-        return false; // do we really need to break
-                      // the connection here?
+        return false;
     }
 
     printf("%s %s HTTP/%s\n",
@@ -91,6 +90,7 @@ serve(SBUFF* sock)
         res.version = req.version;
     }
     sendres(&res, sock->desc);
+    freeresponse(&res);
 
     return true;
 }
