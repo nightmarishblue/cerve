@@ -20,7 +20,7 @@ OUT_DIR := bin
 
 
 # toolchain
-CFLAGS ?= -Wall -Wpedantic -std=gnu23 -MMD -MP
+CFLAGS ?= -Wall -Wpedantic -std=gnu23
 CPPFLAGS += -I $(INC_DIR)
 
 
@@ -52,7 +52,7 @@ $(OUT_DIR)/$(TARGET): $(OBJS)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -MMD -MP -c $< -o $@
 
 
 # misc
