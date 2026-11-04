@@ -2,9 +2,11 @@
 #include "main.h"
 
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <sys/types.h>
 #include <unistd.h>
 
 #include <sys/socket.h>
@@ -31,6 +33,8 @@ sockhead(SBUFF* this)
 ssize_t
 sbuffrecv(SBUFF* this, int flags)
 {
+    // this syscall is b-b-blocking
+    // FIXME implement a timeout
     ssize_t received = recv(this->desc, this->buff, SBUFF_SIZE, flags);
     if (received != -1) {
         this->used = 0;
@@ -117,9 +121,14 @@ sockprintf(fd sock, const char* fmt, ...)
 ssize_t
 transmitfile(fd sock, fd file, size_t n)
 {
-    // TODO ensure this compiles on systems without sendfile
-    ssize_t ret = sendfile(sock, file, NULL, n); // BUG this does not retry
-    if (ret == -1)
-        eprintf("could not transmit file");
-    return ret;
+    size_t written = 0;
+    while (written < n) {
+        ssize_t ret = sendfile(sock, file, NULL, n - written);
+        if (ret == 0)
+            break;
+        if (ret == -1)
+            return -1;
+        written += ret;
+    }
+    return written;
 }
