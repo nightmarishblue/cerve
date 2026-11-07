@@ -1,5 +1,5 @@
 #include "http/method.h"
-#include "main.h"
+#include "util/misc.h"
 #include <string.h>
 
 const char* mthdstrs[] = { "GET",     "HEAD",    "POST",  "PUT",  "DELETE",

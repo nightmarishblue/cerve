@@ -1,5 +1,6 @@
-#ifndef _MAIN_H
-#define _MAIN_H
+
+#ifndef _MISC_H
+#define _MISC_H
 
 #define size(arr) (sizeof(arr) / sizeof(arr[0]))
 #define len(str) (sizeof(str) - 1)

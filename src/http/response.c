@@ -1,6 +1,6 @@
 #include "http/response.h"
-#include "main.h"
 #include "opts.h"
+#include "util/misc.h"
 #include <fcntl.h>
 #include <unistd.h>
 

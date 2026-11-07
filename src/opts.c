@@ -1,6 +1,6 @@
 #include "opts.h"
 #include "file.h"
-#include "main.h"
+#include "util/misc.h"
 
 #include <ctype.h>
 #include <stdio.h>

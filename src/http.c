@@ -1,8 +1,8 @@
 #include "http.h"
 #include "http/request.h"
 #include "http/response.h"
-#include "main.h"
 #include "sock.h"
+#include "util/misc.h"
 
 #include <stdarg.h>
 #include <stdio.h>

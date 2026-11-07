@@ -1,5 +1,5 @@
 #include "sock.h"
-#include "main.h"
+#include "util/misc.h"
 
 #include <stdarg.h>
 #include <stddef.h>

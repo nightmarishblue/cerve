@@ -1,5 +1,5 @@
 #include "file.h"
-#include "main.h"
+#include "util/misc.h"
 
 #include <fcntl.h>
 #include <sys/syscall.h> // to check if openat2 is supported

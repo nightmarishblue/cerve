@@ -1,5 +1,5 @@
 #include "inet.h"
-#include "main.h"
+#include "util/misc.h"
 
 #include <asm-generic/errno-base.h>
 #include <errno.h>

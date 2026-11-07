@@ -2,6 +2,7 @@
 #include "inet.h"
 #include "opts.h"
 #include "sock.h"
+#include "util/misc.h"
 
 #include <asm-generic/socket.h>
 #include <bits/types/siginfo_t.h>
@@ -12,7 +13,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <errno.h>
 #include <sys/socket.h>
 
 volatile sig_atomic_t loop = true;
@@ -22,18 +22,6 @@ cleanup(int _signal)
 {
     puts("Terminating loop...");
     loop = false;
-}
-
-void
-eprintf(const char* format, ...)
-{
-    // maybe quit if silent
-    va_list args;
-    va_start(args, format);
-    fputs("Error: ", stderr); // would end up writing this 10 times otherwise
-    vfprintf(stderr, format, args);
-    va_end(args);
-    fprintf(stderr, ": %s\n", strerror(errno));
 }
 
 int
