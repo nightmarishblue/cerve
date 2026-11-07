@@ -1,7 +1,7 @@
 .*
 !.gitignore
 
-bin/
-build/
+/bin/
+/build/
 
 compile_commands.json

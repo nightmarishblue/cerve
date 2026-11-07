@@ -46,14 +46,17 @@ clean:
 help:
 	@grep -A1 '^##' $(MAKEFILE_LIST) | sed 's/:.*//'
 
-$(OUT_DIR)/$(TARGET): $(OBJS)
-	@mkdir -p $(dir $@)
-	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
-
+# compile each source to an object, plus dependency files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -MMD -MP -c $< -o $@
 
+# filter out objects with main()
+FILTERED := $(filter-out $(OBJ_DIR)/bin/%,$(OBJS))
+# link all objects into the desired binary
+$(OUT_DIR)/%: $(OBJ_DIR)/bin/%.o $(FILTERED)
+	@mkdir -p $(dir $@)
+	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 
 # misc
 # recompile sources if their headers change
