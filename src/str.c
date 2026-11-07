@@ -4,6 +4,58 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DEFAULT_STR_CAP 8
+
+// true if s is at capacity and can't be appended to
+bool
+strfull(STRING* s)
+{
+    // accounts for the null
+    return s->len + 1 >= s->cap;
+}
+
+// create an empty, non-owning string
+// TODO figure out if this can safely be public
+STRING
+strempty()
+{
+    return (STRING){ .buf = "" };
+}
+
+// public functions
+
+bool
+strpush(STRING* s, char c)
+{
+    if (strfull(s) && !strreserve(s, s->cap ? s->cap * 2 : DEFAULT_STR_CAP))
+        return false;
+    s->buf[s->len++] = c;
+    s->buf[s->len] = 0;
+    return true;
+}
+
+bool
+strreserve(STRING* s, size_t cap)
+{
+    bool new = s->cap == 0;
+    void* arr = (new) ? malloc(cap) : realloc(s->buf, cap);
+    if (arr == nullptr)
+        return false;
+
+    s->buf = arr;
+    s->cap = cap;
+    if (new) // null terminate the new string
+        s->buf[0] = 0;
+    return true;
+}
+
+void
+strfree(STRING* s)
+{
+    if (s->cap)
+        free(s->buf);
+}
+
 char*
 msprintf(const char* fmt, ...)
 {
