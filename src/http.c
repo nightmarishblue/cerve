@@ -55,6 +55,7 @@ errorcode(int errorno)
             return URI_TOO_LONG;
 
         default:
+            eprintf("unexpected error");
             return INTERNAL_SERVER_ERROR;
     }
 }
@@ -79,7 +80,7 @@ serve(SBUFF* sock)
 
     printf("%s %s HTTP/%s\n",
            strfrommethod(req.method),
-           req.identifier,
+           req.identifier.buf,
            strfromversion(req.version));
 
     struct response res;
@@ -90,6 +91,8 @@ serve(SBUFF* sock)
         res.version = req.version;
     }
     sendres(&res, sock->desc);
+
+    requestfree(&req);
     freeresponse(&res);
 
     return true;

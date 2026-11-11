@@ -3,6 +3,7 @@
 
 #include "http.h"
 #include "http/method.h"
+#include "str.h"
 
 #define INDEX "index.html"
 
@@ -12,9 +13,7 @@ struct request
 {
     enum method method;   // what method this request is
     enum version version; // the request's version
-    char identifier[MAX_REQ_PATH_LEN + 1 + sizeof(INDEX) -
-                    1]; // the path to the file - extra storage for indexes
-    // can we get away with not null-terminating?
+    STRING identifier;    // id of the requested resource
 };
 
 // read the first line out of a socket and figure out if it's a valid request
@@ -24,5 +23,8 @@ struct request
 // error type anyway
 int
 parserequest(SBUFF* sock, struct request* request);
+
+void
+requestfree(struct request* r);
 
 #endif

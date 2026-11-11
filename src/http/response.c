@@ -61,8 +61,9 @@ respond(const struct request* request, struct response* response)
                 - return a 400/500
                 - return that file
             */
-            const char* filepath = request->identifier;
-            // TODO probably throw errors if the file isn't "regular"
+            // TODO handle indexes correctly (currently, just opens the dir and
+            // proceeds as if nothing were wrong)
+            const char* filepath = request->identifier.buf;
             fd file = openunder(options->srvdir, filepath, O_RDONLY);
             if (file == -1)
                 return false;
@@ -112,6 +113,8 @@ sendres(const struct response* response, fd sock)
         case EMPTY:
             break;
         case FILE_: {
+            // BUG transport errors are ignored
+            // so the file could easily be cut off
             transmitfile(sock, response->file, response->contentlen);
             break;
         }

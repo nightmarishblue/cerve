@@ -1,5 +1,7 @@
 #include "http/request.h"
 #include "http/response.h"
+#include "sock.h"
+#include "str.h"
 #include "util/misc.h"
 #include <stdio.h>
 #include <string.h>
@@ -27,26 +29,26 @@ parserequest(SBUFF* sock, struct request* request)
         return IM_A_TEAPOT;
     }
 
-    // if the next character isn't a /, KILL
-    if ((request->identifier[0] = sbuffgetc(sock)) !=
-        '/') // consume this so we don't have to read it again
+    if (sbuffpeek(sock) != '/')
         return BAD_REQUEST;
 
     // extract the path
     // read up to ' ', up to limit
-    // you would think we should subtract 1 from this, but due to null-term
-    // nonsense, no need
-    size_t pathlen =
-      readuntilchar(sock, MAX_REQ_PATH_LEN, &request->identifier[1], ' ');
-    if (pathlen == MAX_REQ_PATH_LEN) // returns len on failure
-        return URI_TOO_LONG;
+    STRING
+    id = { .buf = "" };
+    for (int i = 0; i < MAX_REQ_PATH_LEN; i++) {
+        int c = sbuffgetc(sock);
+        if (c == -1)
+            return INTERNAL_SERVER_ERROR;
+        if (c == ' ')
+            goto id_done;
 
-    // add index.html to the identifier if there's no file
-    // BUG: /folder and /folder/ are both valid request targets I think
-    // TODO also maybe consider dropping the leading / too if we're gonna
-    // hammer the data
-    if (request->identifier[pathlen] == '/')
-        strcpy(&request->identifier[pathlen + 1], INDEX);
+        strpush(&id, c);
+    }
+    strfree(&id);
+    return URI_TOO_LONG;
+id_done:
+    request->identifier = id;
 
     // extract the version string
     char verstr[MAX_VERSION_LEN];
@@ -79,4 +81,10 @@ parserequest(SBUFF* sock, struct request* request)
     }
 
     return OK;
+}
+
+void
+requestfree(struct request* r)
+{
+    strfree(&r->identifier);
 }
