@@ -6,14 +6,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct str
+typedef struct
 {
     char* buf;  // holds a null-terminated string
     size_t len; // length of the string, excluding the null
     size_t cap; // capacity of the buffer, 0 if it isn't allocated
-};
+} STRING;
 
-typedef struct str STRING;
+// return an empty (but valid) non-owning string
+STRING
+emptystr();
 
 // Expand s's buffer to hold the given capacity.
 // On failure, return false; s is unmodified.

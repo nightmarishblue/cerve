@@ -6,6 +6,8 @@
 
 #define DEFAULT_STR_CAP 8
 
+const char* empty = "";
+
 // true if s is at capacity and can't be appended to
 bool
 strfull(STRING* s)
@@ -14,15 +16,13 @@ strfull(STRING* s)
     return s->len + 1 >= s->cap;
 }
 
-// create an empty, non-owning string
-// TODO figure out if this can safely be public
-STRING
-strempty()
-{
-    return (STRING){ .buf = "" };
-}
-
 // public functions
+
+STRING
+emptystr()
+{
+    return (STRING){ .buf = (char*)empty };
+}
 
 bool
 strpush(STRING* s, char c)
