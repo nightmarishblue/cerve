@@ -1,6 +1,7 @@
 #include "sock.h"
-#include "util/misc.h"
 
+#include <asm-generic/errno.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -13,6 +14,47 @@
 
 #include <sys/sendfile.h>
 
+// get this's head (the next byte of data in its buffer)
+char*
+sockhead(SBUFF* this)
+{
+    return &this->buff[this->used];
+}
+
+// return true if there are no bytes left in s
+bool
+sockempty(const SBUFF* s)
+{
+    return s->used >= s->len;
+}
+
+// try to fill s if it's empty
+// return ENODATA if the socket is at EOF
+bool
+ensuredata(SBUFF* s)
+{
+    if (sockempty(s)) {
+        switch (sbuffrecv(s, 0)) {
+            case 0:
+                errno = ENODATA;
+            case -1:
+                return false;
+            default:
+        }
+    }
+    return true;
+}
+
+// public
+
+int
+sbuffgetc(SBUFF* this)
+{
+    if (!ensuredata(this))
+        return -1;
+    return this->buff[this->used++];
+}
+
 SBUFF
 mksbuff(fd desc)
 {
@@ -21,13 +63,6 @@ mksbuff(fd desc)
     out.len = 0;
     out.used = 0;
     return out;
-}
-
-// get this's head (the next byte of data in its buffer)
-char*
-sockhead(SBUFF* this)
-{
-    return &this->buff[this->used];
 }
 
 ssize_t
@@ -43,29 +78,10 @@ sbuffrecv(SBUFF* this, int flags)
     return received;
 }
 
-// refill this SOCK if needed
-// return false if the refill failed and this SOCK is empty
-bool
-sockrefill(SBUFF* this)
-{
-    if (this->used < this->len)
-        return true;
-    return sbuffrecv(this, 0) > 0; // FIXME maybe treating "no data" and "error
-                                   // occurred" the same is suboptimal...
-}
-
-int
-sbuffgetc(SBUFF* this)
-{
-    if (!sockrefill(this))
-        return -1;
-    return this->buff[this->used++];
-}
-
 int
 sbuffpeek(SBUFF* this)
 {
-    if (!sockrefill(this))
+    if (!ensuredata(this))
         return -1;
     return this->buff[this->used];
 }
