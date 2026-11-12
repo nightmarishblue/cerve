@@ -12,11 +12,12 @@ enum code
     BAD_REQUEST = 400,
     FORBIDDEN = 403,
     NOT_FOUND = 404,
-    LENGTH_REQUIRED = 411, // the client didn't supply Content-Length
-    PAYLOAD_TOO_LARGE = 413,
-    URI_TOO_LONG = 414,
-    IM_A_TEAPOT = 418,           // things we should comply with but don't
-    INTERNAL_SERVER_ERROR = 500, // ¯\_(ツ)_/¯
+    LENGTH_REQUIRED = 411,           // the client didn't supply Content-Length
+    CONTENT_TOO_LARGE = 413,         // the body is too big
+    URI_TOO_LONG = 414,              // the identifier is too big
+    IM_A_TEAPOT = 418,               // things we should comply with but don't
+    REQUEST_HEADERS_TOO_LARGE = 431, // the headers are too big
+    INTERNAL_SERVER_ERROR = 500,     // ¯\_(ツ)_/¯
     NOT_IMPLEMENTED = 501, // things we don't have to comply with (and don't)
 };
 

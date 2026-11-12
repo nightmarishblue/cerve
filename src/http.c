@@ -20,7 +20,7 @@ const char* verstrs[] = { "1.0", "1.1" };
 const size_t verc = size(verstrs);
 // from a string like HTTP/X.X, deduce version
 enum version
-versionfromstr(const char verstr[MAX_VERSION_LEN])
+versionfromstr(const char verstr[MAX_VERSION_STR_SIZE])
 {
     if (strncmp(verstr, "HTTP/", 5) != 0)
         return -1;

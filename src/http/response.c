@@ -30,10 +30,11 @@ const struct status statuses[] = {
     { "Not Found", NOT_FOUND },
     { "Length Required", LENGTH_REQUIRED },
     // things for our implementation limits
-    { "Payload Too Large", PAYLOAD_TOO_LARGE },
+    { "Content Too Large", CONTENT_TOO_LARGE },
     { "URI Too Long", URI_TOO_LONG },
     { "I'm a teapot", IM_A_TEAPOT }, // things we don't support
     { "Internal Server Error", INTERNAL_SERVER_ERROR },
+    { "Request Header Fields Too Large", REQUEST_HEADERS_TOO_LARGE },
     { "Not Implemented", NOT_IMPLEMENTED },
 };
 const size_t statusc = size(statuses);
