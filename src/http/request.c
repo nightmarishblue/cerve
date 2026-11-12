@@ -8,6 +8,12 @@
 
 #define MAX_REQUEST_LEN 4096 // TODO tune this once header parsing is done
 
+#define BAIL(e)                                                                \
+    do {                                                                       \
+        error = e;                                                             \
+        goto reterr;                                                           \
+    } while (false)
+
 // TODO document the pointer invariants
 // FIXME there are actually 3 possible outcomes - successful, error and
 // interrupted
@@ -16,6 +22,8 @@
 int
 parserequest(SBUFF* sock, struct request* request)
 {
+    int error;
+
     // read first few bytes - ensure they are GET /
     char mthdstr[MAX_METHOD_LEN];
     // reject invalid input - smallest method name is GET, 3 chars
@@ -39,15 +47,13 @@ parserequest(SBUFF* sock, struct request* request)
     for (int i = 0; i < MAX_REQ_PATH_LEN; i++) {
         int c = sbuffgetc(sock);
         if (c == -1)
-            return INTERNAL_SERVER_ERROR;
+            BAIL(INTERNAL_SERVER_ERROR);
+
         if (c == ' ')
-            goto id_done;
+            break;
 
         strpush(&id, c);
     }
-    strfree(&id);
-    return URI_TOO_LONG;
-id_done:
     request->identifier = id;
 
     // extract the version string
@@ -55,12 +61,11 @@ id_done:
     readuntilchar(sock, MAX_VERSION_LEN, verstr, '\r');
     enum version version = versionfromstr(verstr);
     if (version == -1)
-        return BAD_REQUEST;
+        BAIL(BAD_REQUEST);
     request->version = version;
-
     // if the next character isn't a \n, KILL
     if (sbuffgetc(sock) != '\n')
-        return BAD_REQUEST;
+        BAIL(BAD_REQUEST);
 
     // consume the remaining headers
     // TODO actually parse - at least the important ones like Content-Length
@@ -71,7 +76,7 @@ id_done:
         // BUG doesn't take EINTR into account
         if (c == -1) {
             eprintf("Error reading from socket");
-            return INTERNAL_SERVER_ERROR;
+            BAIL(INTERNAL_SERVER_ERROR);
         }
         if (c == end[j]) {
             if (end[++j] == '\0')
@@ -81,6 +86,10 @@ id_done:
     }
 
     return OK;
+
+reterr:
+    strfree(&id);
+    return error;
 }
 
 void
