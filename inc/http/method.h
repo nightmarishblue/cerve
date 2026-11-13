@@ -1,7 +1,7 @@
 #ifndef _HTTP_METHOD_H
 #define _HTTP_METHOD_H
 
-#define MAX_METHOD_LEN                                                         \
+#define MAX_METHOD_STR_SIZE                                                    \
     8 // array size needed to represent the name of all methods
 
 // request methods

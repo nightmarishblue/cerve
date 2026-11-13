@@ -98,6 +98,9 @@ sgetc(fd sock, int flags)
 
 size_t
 readuntilchar(SBUFF* sock, const size_t len, char buf[len], char illegal)
+// FIXME can't distinguish transport errors from semantics.
+// socket close, transport error, and just plain not finding it all get the same
+// return value
 {
     if (len == 0)
         return 0; // safer to simply exit if len is 0

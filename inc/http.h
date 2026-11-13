@@ -8,7 +8,7 @@
 
 #define CRLF "\r\n"
 
-#define MAX_VERSION_LEN 9 // array size needed for "HTTP/X.X"
+#define MAX_VERSION_STR_SIZE 9 // array size needed for "HTTP/X.X"
 enum version
 {
     // _0_9, // no one will get mad if we don't support 0.9
@@ -22,7 +22,7 @@ enum version
 // with a string of the form "HTTP/x.x" (9 chars), return its version
 // or -1 on invalid
 enum version
-versionfromstr(const char verstr[MAX_VERSION_LEN]);
+versionfromstr(const char verstr[MAX_VERSION_STR_SIZE]);
 
 const char*
 strfromversion(enum version ver);
