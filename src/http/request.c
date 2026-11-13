@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define MAX_REQUEST_LEN 4096 // TODO tune this once header parsing is done
+#define MAX_REQUEST_LEN 10 // TODO tune this once header parsing is done
 
 #define BAIL(e)                                                                \
     do {                                                                       \
@@ -144,7 +144,7 @@ parserequest(SBUFF* sock, struct request* request)
     if (method > HEAD) {
         fprintf(
           stderr, "oops... we don't have '%s' @u@\n", strfrommethod(method));
-        return IM_A_TEAPOT;
+        return NOT_IMPLEMENTED;
     }
 
     STRING id;
