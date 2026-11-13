@@ -1,7 +1,12 @@
 #include "http/response.h"
+#include "file.h"
+#include "http/request.h"
 #include "opts.h"
 #include "util/misc.h"
+#include <asm-generic/errno-base.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 bool
@@ -21,6 +26,61 @@ sendstatus(fd sock, enum version version, enum code code)
                              (int)status->code,
                              status->desc) > 0;
     return success; // this is a lot of error checking I know
+}
+
+void
+closefile(fd file)
+{
+    if (close(file) == -1) {
+        eprintf("close() file descriptor %d", file);
+    }
+}
+
+// Open the given HTTP identifier from under the srvdir and return its file
+// descriptor, storing its status in fileinfo. If the identifier refers to a
+// directory, open the index file beneath it.
+//
+// On failure, return -1. errno will be set to EINVAL if the resultant file is
+// not regular, else whatever fstat and friends set. fileinfo is unmodified.
+fd
+getfile(const char* identifier, int openflags, struct stat* fileinfo)
+{
+    fd file = openunder(options->srvdir, identifier, openflags);
+    if (file == -1)
+        return -1;
+
+    struct stat finfo;
+    if (fstat(file, &finfo) == -1) {
+        closefile(file);
+        return -1;
+    }
+
+    if (S_ISDIR(finfo.st_mode)) {
+        // try to open the index file
+        fd index = openunder(file, INDEX, openflags);
+        closefile(file);
+        if (index == -1) {
+            return -1;
+        }
+
+        if (fstat(index, &finfo) == -1) {
+            closefile(index);
+            return -1;
+        }
+
+        // swap fds
+        file = index;
+    }
+
+    // accept only true blue files
+    if (!S_ISREG(finfo.st_mode)) {
+        closefile(file);
+        errno = EINVAL;
+        return -1;
+    }
+
+    *fileinfo = finfo;
+    return file;
 }
 
 const struct status statuses[] = {
@@ -63,16 +123,10 @@ respond(const struct request* request, struct response* response)
             */
             // TODO handle indexes correctly (currently, just opens the dir and
             // proceeds as if nothing were wrong)
-            const char* filepath = request->identifier.buf;
-            fd file = openunder(options->srvdir, filepath, O_RDONLY);
+            struct stat finfo;
+            fd file = getfile(request->identifier.buf, O_RDONLY, &finfo);
             if (file == -1)
                 return false;
-
-            struct stat finfo;
-            if (fstat(file, &finfo) == -1) {
-                close(file);
-                return false;
-            }
 
             response->code = OK; // what if this fails later?
             response->version = request->version;
@@ -83,7 +137,7 @@ respond(const struct request* request, struct response* response)
                 response->file = file;
             } else {
                 response->type = EMPTY;
-                close(file);
+                closefile(file);
             }
 
             return true;
@@ -130,5 +184,5 @@ freeresponse(struct response* res)
 {
     // free the response/close its file
     if (res->type == FILE_)
-        close(res->file);
+        closefile(res->file);
 }
