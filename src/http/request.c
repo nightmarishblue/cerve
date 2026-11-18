@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define MAX_REQUEST_LEN 10 // TODO tune this once header parsing is done
+#define MAX_HEADER_LEN 4096
 
 #define BAIL(e)                                                                \
     do {                                                                       \
@@ -100,7 +100,7 @@ parseversion(SBUFF* sock, enum version* version)
 }
 
 // Read and discard the remaining HTTP headers from sock, up to '\r\n\r\n'. Stop
-// after MAX_REQUEST_LEN characters.
+// after MAX_HEADER_LEN characters.
 //
 // Return OK if no errors encountered.
 enum code
@@ -109,7 +109,7 @@ consumeheaders(SBUFF* sock)
 {
     const char* end = "\r\n\r\n";
     size_t j = 0;
-    for (int i = 0; i < MAX_REQUEST_LEN; i++) {
+    for (int i = 0; i < MAX_HEADER_LEN; i++) {
         int c = sbuffgetc(sock);
         // BUG doesn't take EINTR into account
         if (c == -1) {
