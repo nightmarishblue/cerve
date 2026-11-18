@@ -116,14 +116,6 @@ respond(const struct request* request, struct response* response)
     switch (request->method) {
         case GET:
         case HEAD: {
-            /*
-                open the file
-                check if that workeded:
-                - return a 400/500
-                - return that file
-            */
-            // TODO handle indexes correctly (currently, just opens the dir and
-            // proceeds as if nothing were wrong)
             struct stat finfo;
             fd file = getfile(request->identifier.buf, O_RDONLY, &finfo);
             if (file == -1)
